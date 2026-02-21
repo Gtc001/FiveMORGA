@@ -273,37 +273,6 @@ function IdeaDetailPanel({ idea, onClose, onEdit, onDelete, onTogglePin, onDelet
           </section>
         )}
 
-        {/* Links */}
-        {links.length > 0 && (
-          <section>
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Liens & Ressources</h3>
-            <div className="space-y-2">
-              {links.map((link, i) => {
-                const lt = getLinkType(link.type);
-                const Icon = lt.icon;
-                return (
-                  <a
-                    key={i}
-                    href={link.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-3 p-3 rounded-xl bg-dark-700/50 border border-dark-400/30 hover:border-dark-300 hover:bg-dark-600/50 transition-all group"
-                  >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-dark-600 shrink-0 ${lt.color}`}>
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-white truncate">{link.label || link.url}</p>
-                      <p className="text-[10px] text-slate-500 truncate">{link.url}</p>
-                    </div>
-                    <ExternalLink className="w-4 h-4 text-slate-600 group-hover:text-slate-400 shrink-0 transition-colors" />
-                  </a>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
         {/* Images gallery */}
         {images.length > 0 && (
           <section>
@@ -343,6 +312,37 @@ function IdeaDetailPanel({ idea, onClose, onEdit, onDelete, onTogglePin, onDelet
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* Links */}
+        {links.length > 0 && (
+          <section>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Liens & Ressources</h3>
+            <div className="space-y-2">
+              {links.map((link, i) => {
+                const lt = getLinkType(link.type);
+                const Icon = lt.icon;
+                return (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-xl bg-dark-700/50 border border-dark-400/30 hover:border-dark-300 hover:bg-dark-600/50 transition-all group"
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-dark-600 shrink-0 ${lt.color}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white truncate">{link.label || link.url}</p>
+                      <p className="text-[10px] text-slate-500 truncate">{link.url}</p>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-slate-600 group-hover:text-slate-400 shrink-0 transition-colors" />
+                  </a>
+                );
+              })}
             </div>
           </section>
         )}
