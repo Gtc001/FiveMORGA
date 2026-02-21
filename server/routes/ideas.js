@@ -45,13 +45,13 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { title, content, links, color, pinned } = req.body;
+    const { title, content, notes, links, color, pinned } = req.body;
     if (!title) return res.status(400).json({ error: 'Titre requis' });
 
     const result = await pool.query(
-      `INSERT INTO ideas (title, content, links, color, pinned, user_id)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [title, content || null, JSON.stringify(links || []), color || '#6366f1', pinned || false, req.userId]
+      `INSERT INTO ideas (title, content, notes, links, color, pinned, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [title, content || null, notes || null, JSON.stringify(links || []), color || '#6366f1', pinned || false, req.userId]
     );
 
     const idea = result.rows[0];
@@ -67,18 +67,19 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { title, content, links, color, pinned } = req.body;
+    const { title, content, notes, links, color, pinned } = req.body;
     const linksStr = links !== undefined ? JSON.stringify(links) : undefined;
     const result = await pool.query(
       `UPDATE ideas SET
         title = COALESCE($1, title),
         content = COALESCE($2, content),
-        links = COALESCE($3, links),
-        color = COALESCE($4, color),
-        pinned = COALESCE($5, pinned),
+        notes = COALESCE($3, notes),
+        links = COALESCE($4, links),
+        color = COALESCE($5, color),
+        pinned = COALESCE($6, pinned),
         updated_at = NOW()
-       WHERE id = $6 RETURNING *`,
-      [title, content, linksStr, color, pinned, req.params.id]
+       WHERE id = $7 RETURNING *`,
+      [title, content, notes, linksStr, color, pinned, req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Idée non trouvée' });
     const idea = result.rows[0];

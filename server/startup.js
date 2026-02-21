@@ -63,6 +63,7 @@ async function initTables() {
       id SERIAL PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
       content TEXT,
+      notes TEXT,
       links TEXT DEFAULT '[]',
       color VARCHAR(7) DEFAULT '#6366f1',
       pinned BOOLEAN DEFAULT false,
@@ -77,6 +78,12 @@ async function initTables() {
         WHERE table_name = 'ideas' AND column_name = 'links'
       ) THEN
         ALTER TABLE ideas ADD COLUMN links TEXT DEFAULT '[]';
+      END IF;
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'ideas' AND column_name = 'notes'
+      ) THEN
+        ALTER TABLE ideas ADD COLUMN notes TEXT;
       END IF;
     END $$;
 

@@ -191,6 +191,12 @@ export default function IdeasPage() {
             showToast('Fichiers ajoutés');
             loadIdeas();
           }}
+          onSaveNotes={async (notes) => {
+            try {
+              await api.ideas.update(selectedIdea.id, { notes });
+              loadIdeas();
+            } catch (err) { showToast(err.message, 'error'); }
+          }}
         />
       )}
 
@@ -215,11 +221,35 @@ export default function IdeasPage() {
 
 /* ──────────────────── Detail Panel ──────────────────── */
 
-function IdeaDetailPanel({ idea, onClose, onEdit, onDelete, onTogglePin, onDeleteFile, onOpenLightbox, onAddFiles }) {
+function IdeaDetailPanel({ idea, onClose, onEdit, onDelete, onTogglePin, onDeleteFile, onOpenLightbox, onAddFiles, onSaveNotes }) {
   const images = idea.files?.filter((f) => isImage(f.mime_type)) || [];
   const otherFiles = idea.files?.filter((f) => !isImage(f.mime_type)) || [];
   const links = idea.links || [];
   const fileInputRef = useRef(null);
+  const [notesText, setNotesText] = useState(idea.notes || '');
+  const [notesSaved, setNotesSaved] = useState(true);
+  const notesTimer = useRef(null);
+
+  useEffect(() => {
+    setNotesText(idea.notes || '');
+    setNotesSaved(true);
+  }, [idea.id, idea.notes]);
+
+  const handleNotesChange = (val) => {
+    setNotesText(val);
+    setNotesSaved(false);
+    clearTimeout(notesTimer.current);
+    notesTimer.current = setTimeout(() => {
+      onSaveNotes(val);
+      setNotesSaved(true);
+    }, 1000);
+  };
+
+  const saveNotesNow = () => {
+    clearTimeout(notesTimer.current);
+    onSaveNotes(notesText);
+    setNotesSaved(true);
+  };
 
   const handleFileDrop = (e) => {
     e.preventDefault();
@@ -400,6 +430,27 @@ function IdeaDetailPanel({ idea, onClose, onEdit, onDelete, onTogglePin, onDelet
           </button>
           <p className="text-center text-[10px] text-slate-600 mt-1.5">ou glisser-déposer ici</p>
         </section>
+
+        {/* Notes */}
+        <section>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <StickyNote className="w-3.5 h-3.5" />
+              Notes
+            </h3>
+            <span className={`text-[10px] transition-opacity ${notesSaved ? 'text-emerald-500/60' : 'text-amber-400/60'}`}>
+              {notesSaved ? 'Sauvegardé' : 'Sauvegarde...'}
+            </span>
+          </div>
+          <textarea
+            value={notesText}
+            onChange={(e) => handleNotesChange(e.target.value)}
+            onBlur={saveNotesNow}
+            className="w-full bg-dark-700/50 border border-dark-400/30 rounded-xl px-4 py-3 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-fivem/30 focus:ring-1 focus:ring-fivem/20 transition-all resize-none leading-relaxed"
+            rows={5}
+            placeholder="Écris tes notes ici... liens, remarques, idées, todo..."
+          />
+        </section>
       </div>
     </div>
   );
@@ -500,6 +551,7 @@ function IdeaModal({ idea, onSave, onClose }) {
   const [form, setForm] = useState({
     title: idea?.title || '',
     content: idea?.content || '',
+    notes: idea?.notes || '',
     links: idea?.links || [],
     color: idea?.color || '#6366f1',
     pinned: idea?.pinned || false,
