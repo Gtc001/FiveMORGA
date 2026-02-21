@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
 import {
-  Flame, LayoutGrid, Plus, Trash2, LogOut, ChevronLeft,
+  LayoutGrid, Plus, Trash2, ChevronLeft,
   Cpu, Monitor, Store, Car, Landmark, Gamepad2, Skull, Lightbulb, Folder,
 } from 'lucide-react';
 
@@ -15,7 +14,6 @@ export default function Sidebar({
   categories, selectedCategory, onSelectCategory,
   onCreateCategory, onDeleteCategory, open, onToggle,
 }) {
-  const { user, logout } = useAuth();
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
@@ -32,17 +30,9 @@ export default function Sidebar({
   if (!open) return null;
 
   return (
-    <aside className="w-64 h-screen flex flex-col bg-dark-800 border-r border-dark-400/50 shrink-0 slide-in">
-      <div className="p-5 flex items-center justify-between border-b border-dark-400/50">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-fivem to-orange-600 flex items-center justify-center">
-            <Flame className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-white leading-none">FiveM ORGA</h1>
-            <p className="text-[10px] text-slate-500 mt-0.5">Gestionnaire de projet</p>
-          </div>
-        </div>
+    <aside className="w-60 h-full flex flex-col bg-dark-800 border-r border-dark-400/50 shrink-0 slide-in">
+      <div className="p-4 flex items-center justify-between border-b border-dark-400/50">
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Catégories</span>
         <button onClick={onToggle} className="text-slate-500 hover:text-white transition-colors">
           <ChevronLeft className="w-4 h-4" />
         </button>
@@ -61,10 +51,6 @@ export default function Sidebar({
           <span className="font-medium">Toutes les tâches</span>
         </button>
 
-        <div className="pt-3 pb-1 px-3">
-          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Catégories</span>
-        </div>
-
         {categories.map((cat) => {
           const Icon = ICON_MAP[cat.icon] || Folder;
           return (
@@ -77,9 +63,7 @@ export default function Sidebar({
                     : 'text-slate-300 hover:bg-dark-600/60 border border-transparent'
                 }`}
               >
-                <div className="w-4 h-4 flex items-center justify-center">
-                  <Icon className="w-4 h-4" style={{ color: cat.color }} />
-                </div>
+                <Icon className="w-4 h-4 shrink-0" style={{ color: cat.color }} />
                 <span className="flex-1 text-left truncate font-medium">{cat.name}</span>
                 <span className="text-xs text-slate-500 tabular-nums">{cat.task_count}</span>
               </button>
@@ -104,16 +88,9 @@ export default function Sidebar({
               autoFocus
             />
             <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={newColor}
-                onChange={(e) => setNewColor(e.target.value)}
-                className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0"
-              />
+              <input type="color" value={newColor} onChange={(e) => setNewColor(e.target.value)} className="w-8 h-8 rounded-lg cursor-pointer bg-transparent border-0" />
               <button type="submit" className="btn-primary text-xs flex-1 !py-2">Créer</button>
-              <button type="button" onClick={() => setShowNew(false)} className="btn-ghost text-xs !py-2">
-                Annuler
-              </button>
+              <button type="button" onClick={() => setShowNew(false)} className="btn-ghost text-xs !py-2">Annuler</button>
             </div>
           </form>
         ) : (
@@ -125,20 +102,6 @@ export default function Sidebar({
             <span>Nouvelle catégorie</span>
           </button>
         )}
-      </div>
-
-      <div className="p-4 border-t border-dark-400/50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-dark-600 flex items-center justify-center text-sm font-semibold text-fivem uppercase">
-              {user?.username?.[0] || '?'}
-            </div>
-            <span className="text-sm text-slate-300 font-medium">{user?.username}</span>
-          </div>
-          <button onClick={logout} className="text-slate-500 hover:text-red-400 transition-colors p-1.5">
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
       </div>
     </aside>
   );

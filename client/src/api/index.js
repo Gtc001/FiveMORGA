@@ -8,6 +8,11 @@ function getHeaders() {
   };
 }
 
+function authHeader() {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function request(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
     headers: getHeaders(),
@@ -53,5 +58,45 @@ export const api = {
   },
   stats: {
     get: () => request('/stats'),
+  },
+  ideas: {
+    list: (params = {}) => {
+      const qs = new URLSearchParams(
+        Object.fromEntries(Object.entries(params).filter(([, v]) => v))
+      ).toString();
+      return request(`/ideas${qs ? `?${qs}` : ''}`);
+    },
+    create: (idea) =>
+      request('/ideas', { method: 'POST', body: JSON.stringify(idea) }),
+    update: (id, data) =>
+      request(`/ideas/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    delete: (id) =>
+      request(`/ideas/${id}`, { method: 'DELETE' }),
+  },
+  files: {
+    upload: async (files, ideaId) => {
+      const formData = new FormData();
+      files.forEach((f) => formData.append('files', f));
+      if (ideaId) formData.append('idea_id', ideaId);
+      const res = await fetch(`${BASE}/upload`, {
+        method: 'POST',
+        headers: authHeader(),
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur upload');
+      return data;
+    },
+    delete: (id) =>
+      request(`/upload/${id}`, { method: 'DELETE' }),
+  },
+  admin: {
+    listUsers: () => request('/admin/users'),
+    createUser: (data) =>
+      request('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
+    updateUser: (id, data) =>
+      request(`/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteUser: (id) =>
+      request(`/admin/users/${id}`, { method: 'DELETE' }),
   },
 };

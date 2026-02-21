@@ -20,8 +20,19 @@ async function initTables() {
       id SERIAL PRIMARY KEY,
       username VARCHAR(50) UNIQUE NOT NULL,
       password_hash VARCHAR(255) NOT NULL,
+      role VARCHAR(20) DEFAULT 'member' CHECK (role IN ('admin', 'member')),
       created_at TIMESTAMP DEFAULT NOW()
     );
+
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'role'
+      ) THEN
+        ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT 'member';
+      END IF;
+    END $$;
+
     CREATE TABLE IF NOT EXISTS categories (
       id SERIAL PRIMARY KEY,
       name VARCHAR(100) NOT NULL,
@@ -31,6 +42,7 @@ async function initTables() {
       user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       created_at TIMESTAMP DEFAULT NOW()
     );
+
     CREATE TABLE IF NOT EXISTS tasks (
       id SERIAL PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
@@ -46,10 +58,35 @@ async function initTables() {
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS ideas (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255) NOT NULL,
+      content TEXT,
+      color VARCHAR(7) DEFAULT '#6366f1',
+      pinned BOOLEAN DEFAULT false,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS files (
+      id SERIAL PRIMARY KEY,
+      filename VARCHAR(255) NOT NULL,
+      original_name VARCHAR(255) NOT NULL,
+      mime_type VARCHAR(100),
+      size INTEGER,
+      idea_id INTEGER REFERENCES ideas(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
     CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
     CREATE INDEX IF NOT EXISTS idx_tasks_category ON tasks(category_id);
     CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
+    CREATE INDEX IF NOT EXISTS idx_ideas_user ON ideas(user_id);
+    CREATE INDEX IF NOT EXISTS idx_files_idea ON files(idea_id);
   `);
   console.log('[Startup] Tables ready');
 }

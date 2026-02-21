@@ -26,9 +26,12 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       PORT: 3001
       NODE_ENV: production
+    volumes:
+      - uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   pgdata:
+  uploads:

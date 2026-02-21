@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { api } from '../api';
-import Sidebar from './Sidebar';
-import StatsBar from './StatsBar';
-import TaskBoard from './TaskBoard';
-import TaskModal from './TaskModal';
-import Toast from './Toast';
+import Sidebar from '../components/Sidebar';
+import StatsBar from '../components/StatsBar';
+import TaskBoard from '../components/TaskBoard';
+import TaskModal from '../components/TaskModal';
 
-export default function Dashboard() {
+export default function TasksPage() {
+  const { showToast } = useOutletContext();
   const [tasks, setTasks] = useState([]);
   const [categories, setCategories] = useState([]);
   const [stats, setStats] = useState(null);
@@ -15,22 +16,12 @@ export default function Dashboard() {
   const [filterPriority, setFilterPriority] = useState('');
   const [modalTask, setModalTask] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [toast, setToast] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   const loadData = useCallback(async () => {
     try {
       const [tasksData, catsData, statsData] = await Promise.all([
-        api.tasks.list({
-          category_id: selectedCategory || '',
-          search,
-          priority: filterPriority,
-        }),
+        api.tasks.list({ category_id: selectedCategory || '', search, priority: filterPriority }),
         api.categories.list(),
         api.stats.get(),
       ]);
@@ -40,20 +31,16 @@ export default function Dashboard() {
     } catch (err) {
       showToast(err.message, 'error');
     }
-  }, [selectedCategory, search, filterPriority]);
+  }, [selectedCategory, search, filterPriority, showToast]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleStatusChange = async (taskId, status) => {
     try {
       const updated = await api.tasks.updateStatus(taskId, status);
       setTasks((prev) => prev.map((t) => (t.id === taskId ? updated : t)));
       loadData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+    } catch (err) { showToast(err.message, 'error'); }
   };
 
   const handleSaveTask = async (taskData) => {
@@ -68,9 +55,7 @@ export default function Dashboard() {
       setShowModal(false);
       setModalTask(null);
       loadData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+    } catch (err) { showToast(err.message, 'error'); }
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -80,19 +65,12 @@ export default function Dashboard() {
       setShowModal(false);
       setModalTask(null);
       loadData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+    } catch (err) { showToast(err.message, 'error'); }
   };
 
   const handleCreateCategory = async (catData) => {
-    try {
-      await api.categories.create(catData);
-      showToast('Catégorie créée');
-      loadData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+    try { await api.categories.create(catData); showToast('Catégorie créée'); loadData(); }
+    catch (err) { showToast(err.message, 'error'); }
   };
 
   const handleDeleteCategory = async (catId) => {
@@ -101,23 +79,11 @@ export default function Dashboard() {
       showToast('Catégorie supprimée');
       if (selectedCategory === catId) setSelectedCategory(null);
       loadData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  };
-
-  const openNewTask = () => {
-    setModalTask(null);
-    setShowModal(true);
-  };
-
-  const openEditTask = (task) => {
-    setModalTask(task);
-    setShowModal(true);
+    } catch (err) { showToast(err.message, 'error'); }
   };
 
   return (
-    <div className="h-screen flex overflow-hidden bg-dark-900">
+    <div className="h-full flex overflow-hidden">
       <Sidebar
         categories={categories}
         selectedCategory={selectedCategory}
@@ -127,7 +93,6 @@ export default function Dashboard() {
         open={sidebarOpen}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
       />
-
       <div className="flex-1 flex flex-col min-w-0">
         <StatsBar
           stats={stats}
@@ -135,18 +100,12 @@ export default function Dashboard() {
           onSearch={setSearch}
           filterPriority={filterPriority}
           onFilterPriority={setFilterPriority}
-          onNewTask={openNewTask}
+          onNewTask={() => { setModalTask(null); setShowModal(true); }}
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
-
-        <TaskBoard
-          tasks={tasks}
-          onStatusChange={handleStatusChange}
-          onEditTask={openEditTask}
-        />
+        <TaskBoard tasks={tasks} onStatusChange={handleStatusChange} onEditTask={(task) => { setModalTask(task); setShowModal(true); }} />
       </div>
-
       {showModal && (
         <TaskModal
           task={modalTask}
@@ -156,8 +115,6 @@ export default function Dashboard() {
           onClose={() => { setShowModal(false); setModalTask(null); }}
         />
       )}
-
-      {toast && <Toast message={toast.message} type={toast.type} />}
     </div>
   );
 }

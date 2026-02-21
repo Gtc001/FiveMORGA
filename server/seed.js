@@ -85,8 +85,8 @@ async function seed() {
 
     const hash = await bcrypt.hash('admin', 10);
     const userResult = await client.query(
-      'INSERT INTO users (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO UPDATE SET username = $1 RETURNING id',
-      ['admin', hash]
+      'INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) ON CONFLICT (username) DO UPDATE SET password_hash = $2, role = $3 RETURNING id',
+      ['admin', hash, 'admin']
     );
     const userId = userResult.rows[0].id;
 
