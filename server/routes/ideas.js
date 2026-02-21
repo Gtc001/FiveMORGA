@@ -32,7 +32,11 @@ router.get('/', async (req, res) => {
     query += ` GROUP BY i.id, u.username ORDER BY i.pinned DESC, i.created_at DESC`;
 
     const result = await pool.query(query, params);
-    res.json(result.rows);
+    const rows = result.rows.map((r) => ({
+      ...r,
+      links: safeParse(r.links),
+    }));
+    res.json(rows);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -41,16 +45,17 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { title, content, color, pinned } = req.body;
+    const { title, content, links, color, pinned } = req.body;
     if (!title) return res.status(400).json({ error: 'Titre requis' });
 
     const result = await pool.query(
-      `INSERT INTO ideas (title, content, color, pinned, user_id)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [title, content || null, color || '#6366f1', pinned || false, req.userId]
+      `INSERT INTO ideas (title, content, links, color, pinned, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [title, content || null, JSON.stringify(links || []), color || '#6366f1', pinned || false, req.userId]
     );
 
     const idea = result.rows[0];
+    idea.links = safeParse(idea.links);
     idea.files = [];
     idea.author = (await pool.query('SELECT username FROM users WHERE id = $1', [req.userId])).rows[0].username;
     res.status(201).json(idea);
@@ -62,19 +67,23 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { title, content, color, pinned } = req.body;
+    const { title, content, links, color, pinned } = req.body;
+    const linksStr = links !== undefined ? JSON.stringify(links) : undefined;
     const result = await pool.query(
       `UPDATE ideas SET
         title = COALESCE($1, title),
         content = COALESCE($2, content),
-        color = COALESCE($3, color),
-        pinned = COALESCE($4, pinned),
+        links = COALESCE($3, links),
+        color = COALESCE($4, color),
+        pinned = COALESCE($5, pinned),
         updated_at = NOW()
-       WHERE id = $5 RETURNING *`,
-      [title, content, color, pinned, req.params.id]
+       WHERE id = $6 RETURNING *`,
+      [title, content, linksStr, color, pinned, req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Idée non trouvée' });
-    res.json(result.rows[0]);
+    const idea = result.rows[0];
+    idea.links = safeParse(idea.links);
+    res.json(idea);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -93,5 +102,10 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
+
+function safeParse(val) {
+  if (Array.isArray(val)) return val;
+  try { return JSON.parse(val || '[]'); } catch { return []; }
+}
 
 module.exports = router;

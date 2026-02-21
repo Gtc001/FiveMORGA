@@ -63,12 +63,22 @@ async function initTables() {
       id SERIAL PRIMARY KEY,
       title VARCHAR(255) NOT NULL,
       content TEXT,
+      links TEXT DEFAULT '[]',
       color VARCHAR(7) DEFAULT '#6366f1',
       pinned BOOLEAN DEFAULT false,
       user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     );
+
+    DO $$ BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'ideas' AND column_name = 'links'
+      ) THEN
+        ALTER TABLE ideas ADD COLUMN links TEXT DEFAULT '[]';
+      END IF;
+    END $$;
 
     CREATE TABLE IF NOT EXISTS files (
       id SERIAL PRIMARY KEY,
