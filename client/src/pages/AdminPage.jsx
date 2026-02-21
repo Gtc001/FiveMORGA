@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
+import ConfirmDialog from '../components/ConfirmDialog';
 import {
   Users, Plus, Shield, User, Trash2, Edit3, X, Save, Key, AlertCircle,
 } from 'lucide-react';
@@ -112,21 +113,12 @@ export default function AdminPage() {
                     <Edit3 className="w-4 h-4" />
                   </button>
                   {u.id !== currentUser?.id && (
-                    deleteConfirm === u.id ? (
-                      <button
-                        onClick={() => handleDelete(u.id)}
-                        className="p-2 rounded-lg text-red-400 bg-red-500/10 border border-red-500/20 text-xs"
-                      >
-                        Confirmer
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setDeleteConfirm(u.id)}
-                        className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )
+                    <button
+                      onClick={() => setDeleteConfirm({ id: u.id, username: u.username })}
+                      className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   )}
                 </div>
               </div>
@@ -142,6 +134,18 @@ export default function AdminPage() {
           onClose={() => { setShowModal(false); setEditUser(null); }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!deleteConfirm}
+        title="Supprimer l'utilisateur"
+        message={`L'utilisateur « ${deleteConfirm?.username} » sera supprimé définitivement.`}
+        confirmLabel="Supprimer"
+        confirmColor="red"
+        onConfirm={async () => {
+          await handleDelete(deleteConfirm.id);
+        }}
+        onCancel={() => setDeleteConfirm(null)}
+      />
     </div>
   );
 }

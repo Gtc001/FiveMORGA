@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, Trash2, Save } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 const STATUS_OPTIONS = [
   { value: 'todo', label: 'À faire', color: 'bg-blue-500' },
@@ -44,10 +45,6 @@ export default function TaskModal({ task, categories, onSave, onDelete, onClose 
   };
 
   const handleDelete = async () => {
-    if (!showDeleteConfirm) {
-      setShowDeleteConfirm(true);
-      return;
-    }
     setLoading(true);
     await onDelete(task.id);
     setLoading(false);
@@ -154,16 +151,12 @@ export default function TaskModal({ task, categories, onSave, onDelete, onClose 
             {task ? (
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={() => setShowDeleteConfirm(true)}
                 disabled={loading}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all ${
-                  showDeleteConfirm
-                    ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                    : 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
-                }`}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm transition-all text-slate-500 hover:text-red-400 hover:bg-red-500/10"
               >
                 <Trash2 className="w-4 h-4" />
-                {showDeleteConfirm ? 'Confirmer la suppression' : 'Supprimer'}
+                Supprimer
               </button>
             ) : (
               <div />
@@ -188,6 +181,16 @@ export default function TaskModal({ task, categories, onSave, onDelete, onClose 
             </div>
           </div>
         </form>
+
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          title="Supprimer la tâche"
+          message={`La tâche « ${task?.title} » sera supprimée définitivement.`}
+          confirmLabel="Supprimer"
+          confirmColor="red"
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
       </div>
     </div>
   );

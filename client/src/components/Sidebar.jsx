@@ -3,6 +3,7 @@ import {
   LayoutGrid, Plus, Trash2, ChevronLeft,
   Cpu, Monitor, Store, Car, Landmark, Gamepad2, Skull, Lightbulb, Folder,
 } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 const ICON_MAP = {
   cpu: Cpu, monitor: Monitor, store: Store, car: Car,
@@ -17,6 +18,7 @@ export default function Sidebar({
   const [showNew, setShowNew] = useState(false);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const handleCreate = (e) => {
     e.preventDefault();
@@ -68,7 +70,7 @@ export default function Sidebar({
                 <span className="text-xs text-slate-500 tabular-nums">{cat.task_count}</span>
               </button>
               <button
-                onClick={() => onDeleteCategory(cat.id)}
+                onClick={() => setConfirmDelete({ id: cat.id, name: cat.name })}
                 className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
               >
                 <Trash2 className="w-3 h-3" />
@@ -103,6 +105,19 @@ export default function Sidebar({
           </button>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title="Supprimer la catégorie"
+        message={`La catégorie « ${confirmDelete?.name} » sera supprimée. Les tâches associées ne seront pas supprimées.`}
+        confirmLabel="Supprimer"
+        confirmColor="red"
+        onConfirm={() => {
+          onDeleteCategory(confirmDelete.id);
+          setConfirmDelete(null);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </aside>
   );
 }

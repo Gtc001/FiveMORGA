@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { api } from '../api';
+import ConfirmDialog from '../components/ConfirmDialog';
 import {
   Plus, Search, Pin, PinOff, Trash2, Edit3, Paperclip,
   Image as ImageIcon, FileText, X, Upload, Download,
@@ -28,6 +29,7 @@ export default function IdeasPage() {
   const [editIdea, setEditIdea] = useState(null);
   const [selectedIdea, setSelectedIdea] = useState(null);
   const [lightbox, setLightbox] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const loadIdeas = useCallback(async () => {
     try {
@@ -182,9 +184,9 @@ export default function IdeasPage() {
           idea={selectedIdea}
           onClose={() => setSelectedIdea(null)}
           onEdit={() => { setEditIdea(selectedIdea); setShowModal(true); }}
-          onDelete={() => handleDelete(selectedIdea.id)}
+          onDelete={() => setConfirmDelete({ type: 'idea', id: selectedIdea.id, label: selectedIdea.title })}
           onTogglePin={() => handleTogglePin(selectedIdea)}
-          onDeleteFile={handleDeleteFile}
+          onDeleteFile={(fileId, fileName) => setConfirmDelete({ type: 'file', id: fileId, label: fileName || 'ce fichier' })}
           onOpenLightbox={openLightbox}
           onAddFiles={async (files) => {
             await api.files.upload(files, selectedIdea.id);
@@ -215,6 +217,27 @@ export default function IdeasPage() {
           onClose={() => setLightbox(null)}
         />
       )}
+
+      <ConfirmDialog
+        open={!!confirmDelete}
+        title={confirmDelete?.type === 'idea' ? 'Supprimer l\'idée' : 'Supprimer le fichier'}
+        message={
+          confirmDelete?.type === 'idea'
+            ? `L'idée « ${confirmDelete?.label} » et tous ses fichiers seront supprimés définitivement.`
+            : `Le fichier « ${confirmDelete?.label} » sera supprimé définitivement.`
+        }
+        confirmLabel="Supprimer"
+        confirmColor="red"
+        onConfirm={async () => {
+          if (confirmDelete?.type === 'idea') {
+            await handleDelete(confirmDelete.id);
+          } else {
+            await handleDeleteFile(confirmDelete.id);
+          }
+          setConfirmDelete(null);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }
@@ -332,7 +355,7 @@ function IdeaDetailPanel({ idea, onClose, onEdit, onDelete, onTogglePin, onDelet
                         <Download className="w-3 h-3" />
                       </a>
                       <button
-                        onClick={(e) => { e.stopPropagation(); onDeleteFile(file.id); }}
+                        onClick={(e) => { e.stopPropagation(); onDeleteFile(file.id, file.original_name); }}
                         className="p-1.5 rounded-md bg-black/40 text-white/80 hover:text-red-400 hover:bg-black/60 transition-all"
                         title="Supprimer"
                       >
@@ -400,7 +423,7 @@ function IdeaDetailPanel({ idea, onClose, onEdit, onDelete, onTogglePin, onDelet
                     <Download className="w-4 h-4" />
                   </a>
                   <button
-                    onClick={() => onDeleteFile(file.id)}
+                    onClick={() => onDeleteFile(file.id, file.original_name)}
                     className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
