@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const { waitForDB, initTables } = require('./startup');
 
 const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/tasks');
@@ -26,6 +27,15 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
-  console.log(`[FiveM ORGA] Server running on port ${PORT}`);
+async function start() {
+  await waitForDB();
+  await initTables();
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`[FiveM ORGA] Server running on port ${PORT}`);
+  });
+}
+
+start().catch((err) => {
+  console.error('[FiveM ORGA] Failed to start:', err);
+  process.exit(1);
 });
