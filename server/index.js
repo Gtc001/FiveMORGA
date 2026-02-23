@@ -11,6 +11,7 @@ const statsRoutes = require('./routes/stats');
 const adminRoutes = require('./routes/admin');
 const ideasRoutes = require('./routes/ideas');
 const uploadRoutes = require('./routes/upload');
+const patchnotesRoutes = require('./routes/patchnotes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -27,6 +28,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ideas', ideasRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/patchnotes', patchnotesRoutes);
 
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '..', 'client', 'dist')));

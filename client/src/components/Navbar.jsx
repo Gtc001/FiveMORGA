@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  Flame, LayoutDashboard, ListTodo, Lightbulb, Shield, LogOut, ChevronDown,
+  Flame, LayoutDashboard, ListTodo, Lightbulb, Shield, LogOut, ChevronDown, ScrollText,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/tasks', icon: ListTodo, label: 'Tâches' },
   { to: '/ideas', icon: Lightbulb, label: 'Idées' },
+  { to: '/patchnotes', icon: ScrollText, label: 'Patchnotes' },
 ];
 
 export default function Navbar() {

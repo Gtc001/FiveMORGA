@@ -98,10 +98,28 @@ async function initTables() {
       created_at TIMESTAMP DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS patchnote_categories (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      color VARCHAR(7) DEFAULT '#6366f1',
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS patchnotes (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(255),
+      entries TEXT DEFAULT '[]',
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
     CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
     CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
     CREATE INDEX IF NOT EXISTS idx_tasks_category ON tasks(category_id);
     CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);
+    CREATE INDEX IF NOT EXISTS idx_patchnotes_user ON patchnotes(user_id);
+    CREATE INDEX IF NOT EXISTS idx_patchnote_cats_user ON patchnote_categories(user_id);
     CREATE INDEX IF NOT EXISTS idx_ideas_user ON ideas(user_id);
     CREATE INDEX IF NOT EXISTS idx_files_idea ON files(idea_id);
   `);

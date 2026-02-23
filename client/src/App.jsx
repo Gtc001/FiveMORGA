@@ -6,6 +6,7 @@ import DashboardPage from './pages/DashboardPage';
 import TasksPage from './pages/TasksPage';
 import IdeasPage from './pages/IdeasPage';
 import AdminPage from './pages/AdminPage';
+import PatchnotesPage from './pages/PatchnotesPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -45,6 +46,7 @@ export default function App() {
           <Route index element={<DashboardPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="ideas" element={<IdeasPage />} />
+          <Route path="patchnotes" element={<PatchnotesPage />} />
           <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         </Route>
         <Route path="*" element={<Navigate to="/" />} />

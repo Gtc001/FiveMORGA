@@ -99,4 +99,21 @@ export const api = {
     deleteUser: (id) =>
       request(`/admin/users/${id}`, { method: 'DELETE' }),
   },
+  patchnotes: {
+    list: (params = {}) => {
+      const qs = new URLSearchParams(
+        Object.fromEntries(Object.entries(params).filter(([, v]) => v))
+      ).toString();
+      return request(`/patchnotes${qs ? `?${qs}` : ''}`);
+    },
+    create: (data) =>
+      request('/patchnotes', { method: 'POST', body: JSON.stringify(data) }),
+    delete: (id) =>
+      request(`/patchnotes/${id}`, { method: 'DELETE' }),
+    listCategories: () => request('/patchnotes/categories'),
+    createCategory: (data) =>
+      request('/patchnotes/categories', { method: 'POST', body: JSON.stringify(data) }),
+    deleteCategory: (id) =>
+      request(`/patchnotes/categories/${id}`, { method: 'DELETE' }),
+  },
 };
