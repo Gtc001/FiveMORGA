@@ -3,8 +3,8 @@ import { useOutletContext } from 'react-router-dom';
 import { api } from '../api';
 import ConfirmDialog from '../components/ConfirmDialog';
 import {
-  Plus, Trash2, Tag, Copy, Check, FileJson, Clock,
-  ChevronDown, ChevronRight, X, PackagePlus, PackageMinus, Wrench, Settings,
+  Plus, Trash2, Copy, Check, FileJson, Clock,
+  ChevronDown, ChevronRight, X, PackagePlus, PackageMinus, Wrench,
 } from 'lucide-react';
 
 const ACTION_CONFIG = {
@@ -13,18 +13,12 @@ const ACTION_CONFIG = {
   suppression: { label: 'Suppression', icon: PackageMinus, color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20' },
 };
 
-const DEFAULT_CATS = [
-  { name: 'Script', color: '#8b5cf6' },
-  { name: 'Mapping', color: '#3b82f6' },
-];
-
 export default function PatchnotesPage() {
   const { showToast } = useOutletContext();
   const [patchnotes, setPatchnotes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filterCat, setFilterCat] = useState('');
   const [showImport, setShowImport] = useState(false);
-  const [showCatManager, setShowCatManager] = useState(false);
   const [expandedIds, setExpandedIds] = useState(new Set());
   const [confirmDelete, setConfirmDelete] = useState(null);
 
@@ -68,42 +62,15 @@ export default function PatchnotesPage() {
     } catch (err) { showToast(err.message, 'error'); }
   };
 
-  const handleCreateCat = async (name, color) => {
-    try {
-      await api.patchnotes.createCategory({ name, color });
-      showToast('Catégorie créée');
-      load();
-    } catch (err) { showToast(err.message, 'error'); }
-  };
-
-  const handleDeleteCat = async (id) => {
-    try {
-      await api.patchnotes.deleteCategory(id);
-      showToast('Catégorie supprimée');
-      load();
-    } catch (err) { showToast(err.message, 'error'); }
-  };
-
-  const getJsonTemplate = (catName) => {
+  const getJsonTemplate = () => {
     return JSON.stringify([
       {
-        category: catName || 'Script',
-        name: 'nom_du_script',
+        category: 'Nom de la catégorie (ex: Script, Mapping, etc.)',
+        name: 'nom_de_la_resource',
         action: 'ajout | modification | suppression',
         description: 'Description du changement',
       },
     ], null, 2);
-  };
-
-  const getFullTemplate = () => {
-    const cats = categories.length > 0 ? categories : DEFAULT_CATS;
-    const example = cats.map((c) => ({
-      category: c.name,
-      name: 'nom_de_la_resource',
-      action: 'ajout | modification | suppression',
-      description: 'Description du changement',
-    }));
-    return JSON.stringify(example, null, 2);
   };
 
   const formatDate = (dateStr) => {
@@ -132,16 +99,10 @@ export default function PatchnotesPage() {
             <h1 className="text-2xl font-bold text-white">Patchnotes</h1>
             <p className="text-sm text-slate-500 mt-1">Historique des changements du serveur</p>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowCatManager(true)} className="btn-ghost flex items-center gap-2 text-sm border border-dark-400">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Catégories</span>
-            </button>
-            <button onClick={() => setShowImport(true)} className="btn-primary flex items-center gap-2 text-sm">
-              <Plus className="w-4 h-4" />
-              Nouveau patchnote
-            </button>
-          </div>
+          <button onClick={() => setShowImport(true)} className="btn-primary flex items-center gap-2 text-sm">
+            <Plus className="w-4 h-4" />
+            Nouveau patchnote
+          </button>
         </div>
 
         {/* Filters */}
@@ -268,21 +229,9 @@ export default function PatchnotesPage() {
 
       {showImport && (
         <ImportModal
-          categories={categories}
-          getTemplate={getFullTemplate}
-          getJsonTemplate={getJsonTemplate}
+          getTemplate={getJsonTemplate}
           onImport={handleImport}
           onClose={() => setShowImport(false)}
-        />
-      )}
-
-      {showCatManager && (
-        <CategoryManager
-          categories={categories}
-          getJsonTemplate={getJsonTemplate}
-          onCreate={handleCreateCat}
-          onDelete={handleDeleteCat}
-          onClose={() => setShowCatManager(false)}
         />
       )}
 
@@ -300,7 +249,7 @@ export default function PatchnotesPage() {
 
 /* ──────────────────── Import Modal ──────────────────── */
 
-function ImportModal({ categories, getTemplate, getJsonTemplate, onImport, onClose }) {
+function ImportModal({ getTemplate, onImport, onClose }) {
   const [title, setTitle] = useState('');
   const [jsonText, setJsonText] = useState('');
   const [parsed, setParsed] = useState(null);
@@ -373,7 +322,7 @@ function ImportModal({ categories, getTemplate, getJsonTemplate, onImport, onClo
               </button>
             </div>
             <pre className="text-[11px] text-slate-400 bg-dark-900/50 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed">{getTemplate()}</pre>
-            <p className="text-[10px] text-slate-600 mt-2">Copie ce template, donne-le à une IA avec ton résumé, puis colle le JSON généré ci-dessous.</p>
+            <p className="text-[10px] text-slate-600 mt-2">Copie ce template, donne-le à une IA avec ton résumé, puis colle le JSON généré ci-dessous. Les catégories sont détectées automatiquement depuis le JSON.</p>
           </div>
 
           {/* JSON input */}
@@ -449,100 +398,3 @@ function ImportModal({ categories, getTemplate, getJsonTemplate, onImport, onClo
   );
 }
 
-/* ──────────────────── Category Manager ──────────────────── */
-
-function CategoryManager({ categories, getJsonTemplate, onCreate, onDelete, onClose }) {
-  const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState('#6366f1');
-  const [copiedId, setCopiedId] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null);
-
-  const handleCreate = (e) => {
-    e.preventDefault();
-    if (!newName.trim()) return;
-    onCreate(newName.trim(), newColor);
-    setNewName('');
-    setNewColor('#6366f1');
-  };
-
-  const copyTemplate = (cat) => {
-    navigator.clipboard.writeText(getJsonTemplate(cat.name));
-    setCopiedId(cat.id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="relative w-full max-w-md glass rounded-2xl modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between p-6 pb-4 border-b border-dark-400/50">
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Tag className="w-5 h-5 text-fivem" />
-            Catégories Patchnote
-          </h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-dark-500 transition-all">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-4">
-          {/* Existing categories */}
-          {categories.length > 0 ? (
-            <div className="space-y-2">
-              {categories.map((cat) => (
-                <div key={cat.id} className="flex items-center gap-3 p-3 rounded-xl bg-dark-700/50 border border-dark-400/30 group">
-                  <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                  <span className="text-sm font-medium text-white flex-1">{cat.name}</span>
-                  <button
-                    onClick={() => copyTemplate(cat)}
-                    className="text-slate-500 hover:text-fivem transition-colors p-1.5 rounded-lg hover:bg-fivem/10"
-                    title="Copier le template JSON"
-                  >
-                    {copiedId === cat.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(cat)}
-                    className="text-slate-600 hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-red-500/10 opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-600 text-center py-4">Aucune catégorie. Ajoutes-en ci-dessous.</p>
-          )}
-
-          {/* Add new */}
-          <form onSubmit={handleCreate} className="flex items-center gap-2 pt-2 border-t border-dark-400/50">
-            <input
-              type="color"
-              value={newColor}
-              onChange={(e) => setNewColor(e.target.value)}
-              className="w-9 h-9 rounded-lg cursor-pointer bg-transparent border-0 shrink-0"
-            />
-            <input
-              type="text"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="input-field text-sm !py-2 flex-1"
-              placeholder="Nom de la catégorie"
-            />
-            <button type="submit" disabled={!newName.trim()} className="btn-primary !py-2 text-sm disabled:opacity-40">
-              Créer
-            </button>
-          </form>
-        </div>
-
-        <ConfirmDialog
-          open={!!confirmDelete}
-          title="Supprimer cette catégorie ?"
-          message={`La catégorie « ${confirmDelete?.name} » sera supprimée.`}
-          confirmLabel="Supprimer"
-          onConfirm={() => { onDelete(confirmDelete.id); setConfirmDelete(null); }}
-          onCancel={() => setConfirmDelete(null)}
-        />
-      </div>
-    </div>
-  );
-}

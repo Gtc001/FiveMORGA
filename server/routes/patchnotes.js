@@ -94,6 +94,22 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Chaque entrée doit avoir: category, name, action' });
     }
 
+    const uniqueCats = [...new Set(entries.map((e) => e.category))];
+    const AUTO_COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#6366f1', '#f97316', '#14b8a6', '#a855f7'];
+    for (const catName of uniqueCats) {
+      const existing = await pool.query(
+        'SELECT id FROM patchnote_categories WHERE LOWER(name) = LOWER($1) AND user_id = $2',
+        [catName, req.userId]
+      );
+      if (existing.rows.length === 0) {
+        const colorIdx = (await pool.query('SELECT COUNT(*)::int AS c FROM patchnote_categories WHERE user_id = $1', [req.userId])).rows[0].c;
+        await pool.query(
+          'INSERT INTO patchnote_categories (name, color, user_id) VALUES ($1, $2, $3)',
+          [catName, AUTO_COLORS[colorIdx % AUTO_COLORS.length], req.userId]
+        );
+      }
+    }
+
     const result = await pool.query(
       'INSERT INTO patchnotes (title, entries, user_id) VALUES ($1, $2, $3) RETURNING *',
       [title || null, JSON.stringify(entries), req.userId]
